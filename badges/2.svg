@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
+  <rect width="480" height="480" rx="40" fill="#161a1e"/>
+  <circle cx="240" cy="215" r="130" fill="#9aa4b2"/>
+  <circle cx="240" cy="215" r="105" fill="#c9d1d9"/>
+  <text x="240" y="255" font-family="Arial, sans-serif" font-size="110" font-weight="bold" fill="#3c4450" text-anchor="middle">2</text>
+  <text x="240" y="395" font-family="Arial, sans-serif" font-size="34" font-weight="bold" fill="#eaecef" text-anchor="middle">HAT TRICK</text>
+  <text x="240" y="430" font-family="Arial, sans-serif" font-size="22" fill="#9aa4b2" text-anchor="middle">AgentRally · Tier 2</text>
+</svg>

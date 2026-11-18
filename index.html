@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentRally — Daily Check-In for Agent ID Holders</title>
+<meta name="description" content="AgentRally is a daily check-in club exclusively for Agent ID (.ai) holders on BNB Chain. Build streaks, earn soulbound badges.">
+<style>
+  :root { --bg:#0b0e11; --card:#161a1e; --line:#2b3138; --text:#eaecef; --muted:#9aa4b2; --gold:#f0b90b; --gold-dim:#c99400; --green:#0ecb81; --red:#f6465d; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height:1.55; }
+  .wrap { max-width:880px; margin:0 auto; padding:24px 16px 64px; }
+  header { text-align:center; padding:36px 0 8px; }
+  .logo { font-size:44px; }
+  h1 { font-size:34px; letter-spacing:.5px; }
+  h1 span { color:var(--gold); }
+  .tag { color:var(--muted); margin-top:6px; font-size:16px; }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:28px 0; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; text-align:center; }
+  .stat b { display:block; font-size:26px; color:var(--gold); }
+  .stat small { color:var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:1px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; margin:16px 0; }
+  .card h2 { font-size:19px; margin-bottom:10px; }
+  .muted { color:var(--muted); }
+  button { background:var(--gold); color:#181a20; border:0; border-radius:10px; padding:13px 26px; font-size:16px; font-weight:700; cursor:pointer; }
+  button:hover { background:var(--gold-dim); }
+  button:disabled { background:#3a3f46; color:#8a929c; cursor:not-allowed; }
+  .center { text-align:center; }
+  .addr { font-family:ui-monospace,Menlo,monospace; font-size:13px; word-break:break-all; }
+  .pill { display:inline-block; padding:3px 12px; border-radius:999px; font-size:13px; font-weight:600; }
+  .pill.ok { background:rgba(14,203,129,.15); color:var(--green); }
+  .pill.no { background:rgba(246,70,93,.15); color:var(--red); }
+  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:14px 0; }
+  .kv { background:#0e1114; border:1px solid var(--line); border-radius:10px; padding:10px 14px; }
+  .kv small { color:var(--muted); display:block; font-size:11px; text-transform:uppercase; letter-spacing:1px; }
+  .kv b { font-size:20px; }
+  .badges { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:12px; }
+  .badge { text-align:center; opacity:.35; filter:grayscale(1); }
+  .badge.owned { opacity:1; filter:none; }
+  .badge img { width:100%; max-width:110px; border-radius:12px; }
+  .badge small { display:block; margin-top:6px; color:var(--muted); font-size:12px; }
+  .badge b { display:block; font-size:13px; }
+  #msg { min-height:24px; margin-top:12px; font-size:14px; }
+  a { color:var(--gold); }
+  .tiers { width:100%; border-collapse:collapse; margin-top:8px; }
+  .tiers td, .tiers th { border-bottom:1px solid var(--line); padding:8px 6px; text-align:left; font-size:14px; }
+  footer { text-align:center; color:var(--muted); font-size:13px; margin-top:36px; }
+  @media (max-width:560px){ .stats{grid-template-columns:1fr 1fr 1fr;} .badges{grid-template-columns:repeat(2,1fr);} h1{font-size:27px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🏁</div>
+    <h1>Agent<span>Rally</span></h1>
+    <p class="tag">The daily check-in club for Agent ID holders on BNB Chain.<br>Show up every day. Build your streak. Earn soulbound badges.</p>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><b id="stAgents">–</b><small>Agents joined</small></div>
+    <div class="stat"><b id="stToday">–</b><small>Check-ins today</small></div>
+    <div class="stat"><b id="stTotal">–</b><small>Total check-ins</small></div>
+  </div>
+
+  <div class="card center">
+    <h2>Your Rally</h2>
+    <div id="notLive" class="muted" style="display:none">⏳ The contract is being deployed — check-in opens very soon.</div>
+    <div id="connectBox">
+      <p class="muted">Connect the wallet that holds your Agent ID (.ai) to check in.<br>Open this page in your wallet's dApp browser if you have no wallet extension.</p>
+      <p style="margin-top:14px"><button id="btnConnect">Connect Wallet</button></p>
+    </div>
+    <div id="userBox" style="display:none">
+      <p class="addr" id="uAddr"></p>
+      <p style="margin:8px 0">Agent ID: <span id="uAgent" class="pill no">checking…</span></p>
+      <div class="grid">
+        <div class="kv"><small>Current streak</small><b id="uStreak">0</b></div>
+        <div class="kv"><small>Best streak</small><b id="uBest">0</b></div>
+        <div class="kv"><small>Total check-ins</small><b id="uTotal">0</b></div>
+        <div class="kv"><small>Checked in today</small><b id="uToday">No</b></div>
+      </div>
+      <button id="btnCheckIn">✅ Check In Today</button>
+      <div class="badges" id="uBadges"></div>
+    </div>
+    <div id="msg"></div>
+  </div>
+
+  <div class="card">
+    <h2>How it works</h2>
+    <p class="muted">AgentRally reads the official Agent ID registry on BNB Chain. If your address holds an Agent ID, you can check in once per day (UTC). Consecutive days build your streak. Reaching total check-in milestones automatically mints a <b>soulbound</b> badge NFT to your wallet — it can never be transferred or sold, just like your Agent ID itself.</p>
+    <table class="tiers">
+      <tr><th>Badge</th><th>Tier</th><th>Requirement</th></tr>
+      <tr><td>🥉 First Rally</td><td>Tier 1</td><td>1 total check-in</td></tr>
+      <tr><td>🥈 Hat Trick</td><td>Tier 2</td><td>3 total check-ins</td></tr>
+      <tr><td>🥇 Week Warrior</td><td>Tier 3</td><td>7 total check-ins</td></tr>
+      <tr><td>🏆 Rally Legend</td><td>Tier 4</td><td>14 total check-ins</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Contract &amp; safety</h2>
+    <p class="muted">
+      Contract (BNB Chain): <span class="addr" id="cAddr"></span><br>
+      Agent ID registry: <span class="addr">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span><br><br>
+      The contract is open source and verified on BscScan. It has <b>no owner and no admin functions</b> — nobody can pause it, change the rules, move your badges, or touch any funds (it never holds or moves user assets; check-in costs only network gas). This site never asks for seed phrases, private keys, or pairing codes, and never signs anything except the check-in transaction you approve in your own wallet.
+    </p>
+  </div>
+
+  <footer>
+    AgentRally — built for the Binance Wallet × BNB Chain Agent ID Hackathon.<br>
+    Check-in is a free on-chain action; you only pay BNB Chain network gas. This is not financial advice and nothing here promises returns.
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.min.js"></script>
+<script>
+const CONTRACT = "0x3745dE1B6F2d2f818b680ecb2533e2703eAc77fd";
+const RPC = "https://bsc-dataseed.binance.org";
+const ABI = [{"inputs":[{"internalType":"address","name":"agentIdRegistry_","type":"address"},{"internalType":"string","name":"baseURI_","type":"string"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint8","name":"tier","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"BadgeMinted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"day","type":"uint256"},{"indexed":false,"internalType":"uint32","name":"currentStreak","type":"uint32"},{"indexed":false,"internalType":"uint32","name":"totalCheckIns","type":"uint32"}],"name":"CheckedIn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[],"name":"AGENT_ID_REGISTRY","outputs":[{"internalType":"contract IAgentIdRegistry","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"MAX_TIER","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"TIER1_AT","outputs":[{"internalType":"uint32","name":"","type":"uint32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"TIER2_AT","outputs":[{"internalType":"uint32","name":"","type":"uint32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"TIER3_AT","outputs":[{"internalType":"uint32","name":"","type":"uint32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"TIER4_AT","outputs":[{"internalType":"uint32","name":"","type":"uint32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"badgeTierOf","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"uint8","name":"","type":"uint8"}],"name":"badgeTokenOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"baseURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"checkIn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"checkInsToday","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"currentDay","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"getStats","outputs":[{"internalType":"uint32","name":"totalCheckIns","type":"uint32"},{"internalType":"uint32","name":"currentStreak","type":"uint32"},{"internalType":"uint32","name":"bestStreak","type":"uint32"},{"internalType":"uint32","name":"lastDay","type":"uint32"},{"internalType":"uint8","name":"badgesMinted","type":"uint8"},{"internalType":"bool","name":"checkedInToday","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"user","type":"address"}],"name":"hasAgentId","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"pure","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"bytes","name":"","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"bool","name":"","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"pure","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"stats","outputs":[{"internalType":"uint32","name":"totalCheckIns","type":"uint32"},{"internalType":"uint32","name":"currentStreak","type":"uint32"},{"internalType":"uint32","name":"bestStreak","type":"uint32"},{"internalType":"uint32","name":"lastDay","type":"uint32"},{"internalType":"uint8","name":"badgesMinted","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"pure","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalAgents","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalCheckInsAll","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"},{"internalType":"address","name":"","type":"address"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"pure","type":"function"}];
+const TIERS = [
+  { n: 1, name: "First Rally", need: 1 },
+  { n: 2, name: "Hat Trick", need: 3 },
+  { n: 3, name: "Week Warrior", need: 7 },
+  { n: 4, name: "Rally Legend", need: 14 }
+];
+document.getElementById("cAddr").textContent = CONTRACT;
+const msg = (t, ok) => { const m = document.getElementById("msg"); m.textContent = t; m.style.color = ok === false ? "#f6465d" : "#0ecb81"; };
+const readProvider = new ethers.JsonRpcProvider(RPC);
+const readContract = new ethers.Contract(CONTRACT, ABI, readProvider);
+let live = false;
+
+async function loadGlobal() {
+  try {
+    const code = await readProvider.getCode(CONTRACT);
+    live = code && code !== "0x";
+    document.getElementById("notLive").style.display = live ? "none" : "block";
+    if (!live) return;
+    const [a, t, tot] = await Promise.all([readContract.totalAgents(), readContract.checkInsToday(), readContract.totalCheckInsAll()]);
+    document.getElementById("stAgents").textContent = a.toString();
+    document.getElementById("stToday").textContent = t.toString();
+    document.getElementById("stTotal").textContent = tot.toString();
+  } catch (e) { /* RPC hiccup: leave dashes */ }
+}
+
+let userAddr = null, writeContract = null;
+async function connect() {
+  if (!window.ethereum) { msg("No wallet found. Open this page inside your wallet's dApp browser.", false); return; }
+  try {
+    const bp = new ethers.BrowserProvider(window.ethereum);
+    const net = await bp.getNetwork();
+    if (net.chainId !== 56n) {
+      await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x38" }] });
+    }
+    const signer = await bp.getSigner();
+    userAddr = await signer.getAddress();
+    writeContract = new ethers.Contract(CONTRACT, ABI, signer);
+    document.getElementById("connectBox").style.display = "none";
+    document.getElementById("userBox").style.display = "block";
+    document.getElementById("uAddr").textContent = userAddr;
+    await refreshUser();
+  } catch (e) { msg("Connection failed: " + (e.shortMessage || e.message), false); }
+}
+
+async function refreshUser() {
+  if (!userAddr) return;
+  const has = await readContract.hasAgentId(userAddr);
+  const pill = document.getElementById("uAgent");
+  pill.textContent = has ? "✓ Holder" : "✗ Not found";
+  pill.className = "pill " + (has ? "ok" : "no");
+  const btn = document.getElementById("btnCheckIn");
+  if (!live) { btn.disabled = true; btn.textContent = "⏳ Not live yet"; return; }
+  const s = await readContract.getStats(userAddr);
+  document.getElementById("uStreak").textContent = s.currentStreak.toString();
+  document.getElementById("uBest").textContent = s.bestStreak.toString();
+  document.getElementById("uTotal").textContent = s.totalCheckIns.toString();
+  document.getElementById("uToday").textContent = s.checkedInToday ? "Yes ✅" : "No";
+  const box = document.getElementById("uBadges");
+  box.innerHTML = "";
+  for (const t of TIERS) {
+    const owned = Number(s.badgesMinted) >= t.n;
+    const div = document.createElement("div");
+    div.className = "badge" + (owned ? " owned" : "");
+    div.innerHTML = `<img src="badges/${t.n}.svg" alt="${t.name}"><b>${t.name}</b><small>Tier ${t.n} · ${t.need} check-ins</small>`;
+    box.appendChild(div);
+  }
+  if (!has) { btn.disabled = true; btn.textContent = "Agent ID required"; }
+  else if (s.checkedInToday) { btn.disabled = true; btn.textContent = "✅ Done — see you tomorrow"; }
+  else { btn.disabled = false; btn.textContent = "✅ Check In Today"; }
+}
+
+async function checkIn() {
+  if (!writeContract) return;
+  const btn = document.getElementById("btnCheckIn");
+  btn.disabled = true; btn.textContent = "⏳ Confirm in your wallet…";
+  try {
+    const tx = await writeContract.checkIn();
+    msg("Transaction sent: " + tx.hash + " — waiting for confirmation…");
+    await tx.wait();
+    msg("🎉 Check-in confirmed! Your streak and badges are updated.");
+    await loadGlobal(); await refreshUser();
+  } catch (e) {
+    msg("Check-in failed: " + (e.reason || e.shortMessage || e.message), false);
+    btn.disabled = false; btn.textContent = "✅ Check In Today";
+  }
+}
+
+document.getElementById("btnConnect").addEventListener("click", connect);
+document.getElementById("btnCheckIn").addEventListener("click", checkIn);
+loadGlobal();
+</script>
+</body>
+</html>
